@@ -2,6 +2,7 @@
 using System.IO;
 using System.Text;
 using System.Collections.Generic;
+using System.Linq;
 
 class Program
 {
@@ -37,19 +38,15 @@ class ProjectToMdBuilder
         "appsettings.production.json", "appsettings.staging.json", "web.config"
     };
 
+    private const string HistoryFile = "path_history.txt";
+
     public void Run()
     {
         try
         {
             Console.WriteLine("=== Генератор документации проекта ===");
 
-            var defaultPath = AppDomain.CurrentDomain.BaseDirectory;
-            Console.WriteLine($"\nТекущая папка приложения: {defaultPath}");
-            Console.Write("Использовать текущую папку? (Y/N Д/Н): ");
-            var readed = Console.ReadLine().Trim().ToUpper();
-            var rootPath = readed == "Y" || readed == "Д"
-                ? defaultPath
-                : GetCustomPath();
+            var rootPath = ChooseProjectPath();
             var root = new DirectoryInfo(rootPath).Name;
             var outputPath = Path.Combine(rootPath, root + "_project_documentation.md");
 
@@ -79,6 +76,82 @@ class ProjectToMdBuilder
         }
 
         return path;
+    }
+
+    private string ChooseProjectPath()
+    {
+        var appDir = AppDomain.CurrentDomain.BaseDirectory;
+        var historyFile = Path.Combine(appDir, HistoryFile);
+
+        var history = new List<string>();
+        if (File.Exists(historyFile))
+        {
+            history = File.ReadAllLines(historyFile)
+                .Where(d => Directory.Exists(d))
+                .Distinct()
+                .ToList();
+        }
+
+        var options = new List<string> { $"Текущая папка: {appDir}", "Ввести путь вручную" };
+        options.AddRange(history);
+
+        var selected = ShowMenu(options);
+
+        string path = selected switch
+        {
+            var s when s.StartsWith("Текущая папка") => appDir,
+            "Ввести путь вручную" => GetCustomPath(),
+            _ => selected
+        };
+
+        if (!history.Contains(path))
+        {
+            history.Insert(0, path);
+            File.WriteAllLines(historyFile, history);
+        }
+
+        return path;
+    }
+
+    private string ShowMenu(List<string> options)
+    {
+        int index = 0;
+        ConsoleKeyInfo key;
+        Console.CursorVisible = false;
+
+        do
+        {
+            Console.Clear();
+            Console.WriteLine("=== Генератор документации проекта ===\n");
+            Console.WriteLine("Выберите папку проекта (стрелки, Enter):\n");
+
+            for (int i = 0; i < options.Count; i++)
+            {
+                if (i == index)
+                {
+                    Console.BackgroundColor = ConsoleColor.Gray;
+                    Console.ForegroundColor = ConsoleColor.Black;
+                    Console.WriteLine($"> {options[i]}");
+                    Console.ResetColor();
+                }
+                else
+                {
+                    Console.WriteLine($"  {options[i]}");
+                }
+            }
+
+            key = Console.ReadKey(true);
+
+            if (key.Key == ConsoleKey.UpArrow)
+                index = (index - 1 + options.Count) % options.Count;
+            else if (key.Key == ConsoleKey.DownArrow)
+                index = (index + 1) % options.Count;
+
+        } while (key.Key != ConsoleKey.Enter);
+
+        Console.CursorVisible = true;
+        Console.Clear();
+        return options[index];
     }
 
     private void Build(string rootPath, string outputMd)
