@@ -38,7 +38,7 @@ class ProjectToMdBuilder
         "appsettings.production.json", "appsettings.staging.json", "web.config"
     };
 
-    private const string HistoryFile = "path_history.txt";
+    private const string HistoryFile = "Path_history.txt";
 
     public void Run()
     {
