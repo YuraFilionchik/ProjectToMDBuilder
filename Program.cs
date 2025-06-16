@@ -163,7 +163,7 @@ class ProjectToMdBuilder
         Console.WriteLine("\nГенерация структуры проекта...");
         mdContent.AppendLine("#======Структура проекта:=====\n ");
         GenerateStructure(new DirectoryInfo(rootPath), "", mdContent, ref dirCounter, ref fileCounter);
-        mdContent.AppendLine("===============================");
+        mdContent.AppendLine("==============================");
         Console.WriteLine($"Обработано папок: {dirCounter}, файлов: {fileCounter}");
 
         Console.WriteLine("\nСбор содержимого файлов...");
