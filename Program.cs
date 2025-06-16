@@ -26,7 +26,7 @@ class ProjectToMdBuilder
     private readonly List<string> _excludedExtensions = new List<string>
     {
         ".exe", ".dll", ".pdb", ".suo", ".user", ".cache", ".zip", ".pdf",
-        ".snk", ".pfx", ".cer", ".csproj", ".sln", ".userprefs", ".lock.json", ".dockerignore",
+        ".snk", ".pfx", ".cer", ".sln", ".userprefs", ".lock.json", ".dockerignore",
         ".gitattributes", ".gitignore", "sql", ".md", ".txt", ".log", ".tmp", ".bak", ".swp",
         ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".rar", ".7z", ".tar", ".gz",
         ".mp3", ".mp4", ".avi", ".mov", ".wmv", ".flv", ".iso", ".class", ".jar"
