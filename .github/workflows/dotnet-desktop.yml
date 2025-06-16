@@ -2,9 +2,8 @@ name: .NET Core Desktop
 
 on:
   push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+    tags:
+      - 'v*'   # Запускать только на пуш тегов, например v1.0.0
 
 jobs:
   build:
