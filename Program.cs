@@ -1,40 +1,34 @@
 ﻿using System;
 using System.IO;
 using System.Text;
-using System.Diagnostics;
 using System.Collections.Generic;
-using iTextSharp.text;
-using iTextSharp.text.pdf;
-using iTextSharp.tool.xml;
-using iTextSharp.tool.xml.html;
-using iTextSharp.tool.xml.parser;
-using iTextSharp.tool.xml.pipeline.css;
-using iTextSharp.tool.xml.pipeline.end;
-using iTextSharp.tool.xml.pipeline.html;
 
 class Program
 {
     static void Main(string[] args)
     {
         Console.OutputEncoding = Encoding.UTF8;
-        var builder = new ProjectToPdfBuilder();
+        var builder = new ProjectToMdBuilder();
         builder.Run();
     }
 }
 
-class ProjectToPdfBuilder
+class ProjectToMdBuilder
 {
     private readonly List<string> _excludedDirs = new List<string>
     {
         ".git", ".github", "bin", "obj", "node_modules", "packages", "dist", "wwwroot",
-        ".vs", ".cr", ".vscode", ".idea", "TestResults", "coverage", "artifacts"
+        ".vs", ".cr", ".vscode", ".idea", "TestResults", "coverage", "artifacts",
+        "docs", "images", "resources"
     };
 
     private readonly List<string> _excludedExtensions = new List<string>
     {
         ".exe", ".dll", ".pdb", ".suo", ".user", ".cache", ".zip", ".pdf",
         ".snk", ".pfx", ".cer", ".csproj", ".sln", ".userprefs", ".lock.json", ".dockerignore",
-        ".gitattributes", ".gitignore", "sql",".md", ".txt", ".log", ".tmp", ".bak", ".swp"
+        ".gitattributes", ".gitignore", "sql", ".md", ".txt", ".log", ".tmp", ".bak", ".swp",
+        ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".rar", ".7z", ".tar", ".gz",
+        ".mp3", ".mp4", ".avi", ".mov", ".wmv", ".flv", ".iso", ".class", ".jar"
     };
 
     private readonly List<string> _excludedFiles = new List<string>
@@ -57,12 +51,12 @@ class ProjectToPdfBuilder
                 ? defaultPath
                 : GetCustomPath();
             var root = new DirectoryInfo(rootPath).Name;
-            var outputPath = Path.Combine(rootPath, root+ "_project_documentation.pdf");
+            var outputPath = Path.Combine(rootPath, root + "_project_documentation.md");
 
             Console.WriteLine("\nНачинаем обработку...");
             Build(rootPath, outputPath);
 
-            Console.WriteLine($"\nГотово! PDF сохранен: {outputPath}");
+            Console.WriteLine($"\nГотово! MD сохранен: {outputPath}");
            // Process.Start(outputPath);
         }
         catch (Exception ex)
@@ -87,7 +81,7 @@ class ProjectToPdfBuilder
         return path;
     }
 
-    private void Build(string rootPath, string outputPdf)
+    private void Build(string rootPath, string outputMd)
     {
         var mdContent = new StringBuilder();
         var fileCounter = 0;
@@ -103,8 +97,8 @@ class ProjectToPdfBuilder
         mdContent.AppendLine("\n# Содержимое файлов");
         ProcessDirectory(new DirectoryInfo(rootPath), mdContent, ref fileCounter);
 
-        Console.WriteLine("\nСоздание PDF...");
-        ConvertMdToPdf(mdContent.ToString(), outputPdf);
+        Console.WriteLine("\nСохранение MD...");
+        File.WriteAllText(outputMd, mdContent.ToString(), Encoding.UTF8);
     }
 
     //private void GenerateStructure(DirectoryInfo dir, string indent, StringBuilder sb, ref int dirCounter, ref int fileCounter)
@@ -221,81 +215,5 @@ class ProjectToPdfBuilder
             _ => ""
         };
 
-    private async void ConvertMdToPdf(string mdContent, string outputPath)
-    {
-        try
-        {
-            // Регистрация провайдера кодировок
-            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
-            // Шрифт с поддержкой Unicode
-            var baseFont = BaseFont.CreateFont(
-                "c:/windows/fonts/arial.ttf",
-                BaseFont.IDENTITY_H,
-                BaseFont.EMBEDDED
-            );
-
-            var font = new Font(baseFont, 10);
-
-            using (var document = new Document())
-            {
-                var writer = PdfWriter.GetInstance(document, new FileStream(outputPath, FileMode.Create));
-                document.Open();
-
-                // Создаем кастомный провайдер шрифтов
-                var cssResolver = XMLWorkerHelper.GetInstance().GetDefaultCssResolver(true);
-                cssResolver.AddCss(
-                    "pre { font-family: Arial Unicode MS; font-size: 8pt; }",
-                    true
-                );
-
-                var htmlContext = new HtmlPipelineContext(new CssAppliersImpl(new UnicodeFontProvider()));
-                htmlContext.SetTagFactory(Tags.GetHtmlTagProcessorFactory());
-
-                var pipeline = new CssResolverPipeline(
-                    cssResolver,
-                    new HtmlPipeline(htmlContext, new PdfWriterPipeline(document, writer))
-                );
-
-                var worker = new XMLWorker(pipeline, true);
-                var parser = new XMLParser(worker);
-                await File.WriteAllTextAsync(outputPath + ".md", mdContent, Encoding.UTF8);
-                // Конвертируем Markdown в HTML
-                var html = $@"<html>
-            <head>
-                <meta charset='UTF-8'/>
-            </head>
-            <body>
-                <pre>{mdContent}</pre>
-            </body>
-        </html>";
-
-                using (var sr = new MemoryStream(Encoding.UTF8.GetBytes(html)))
-                {
-                    parser.Parse(sr);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Ошибка конвертации в PDF: {ex.Message}");
-            Console.ReadKey();
-        }
-    }
-
-    // Кастомный провайдер шрифтов
-    public class UnicodeFontProvider : XMLWorkerFontProvider
-    {
-        public override Font GetFont(string fontname, string encoding, bool embedded, float size, int style, BaseColor color)
-        {
-            return FontFactory.GetFont(
-                "c:/windows/fonts/arial.ttf",
-                BaseFont.IDENTITY_H,
-                BaseFont.EMBEDDED,
-                size,
-                style,
-                color
-            );
-        }
-    }
 }
