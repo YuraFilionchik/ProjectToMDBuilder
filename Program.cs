@@ -61,8 +61,8 @@ class ProjectToMdBuilder
             Console.WriteLine("=== Генератор документации проекта ===");
             originalUserInputPath = ChooseProjectPath(); // Get the raw user input
             string projectPath = originalUserInputPath; // This path might be updated if it's a URL
-
-            if (IsGitHubUrl(projectPath))
+            var isGit = IsGitHubUrl(projectPath);
+            if (isGit)
             {
                 Console.WriteLine($"Обнаружен URL GitHub репозитория: {projectPath}");
                 if (CloneGitHubRepository(projectPath, out string clonedPath))
@@ -92,8 +92,18 @@ class ProjectToMdBuilder
             }
 
             var rootName = new DirectoryInfo(projectPath).Name; // Use actual processed path for root name
-            var outputPath = Path.Combine(projectPath, rootName + "_project_documentation.md");
-
+            string outputPath;
+            if (isGit)
+            { 
+                var gitName = originalUserInputPath.Split('/').Last().Replace(".git", "");
+                outputPath = Path.Combine(Directory.GetCurrentDirectory(), "Outputs", gitName + "_listing.md");
+                Directory.CreateDirectory(Path.GetDirectoryName(outputPath)); // Ensure Outputs directory exists
+            }
+            else
+            {
+                // For local paths, save in the same directory as the project
+                outputPath = Path.Combine(projectPath, rootName + "_listing.md");
+            }
             Console.WriteLine("\nНачинаем обработку...");
             Build(projectPath, outputPath);
 
@@ -121,6 +131,7 @@ class ProjectToMdBuilder
                 }
                 catch (IOException ioEx)
                 {
+
                     Console.WriteLine($"Ошибка при удалении временной папки '{_tempClonedRepoPath}': {ioEx.Message}. Возможно, потребуется удалить ее вручную.");
                 }
                 catch (UnauthorizedAccessException authEx)
@@ -139,7 +150,7 @@ class ProjectToMdBuilder
     /// <returns>True if cloning was successful, false otherwise.</returns>
     private bool CloneGitHubRepository(string repoUrl, out string clonedPath)
     {
-        clonedPath = Path.Combine(Path.GetTempPath(), "ProjectToMdBuilder_ClonedRepos", Guid.NewGuid().ToString());
+        clonedPath = Path.Combine(Directory.GetCurrentDirectory(), "GitHub_Clones", Guid.NewGuid().ToString());
         try
         {
             Directory.CreateDirectory(clonedPath);
@@ -453,17 +464,6 @@ class ProjectToMdBuilder
             // Pass the basePath along in recursive calls
             ProcessDirectory(subDir, basePath, sb, ref counter);
         }
-    }
-
-    private bool ShouldExclude(FileSystemInfo item)
-    {
-        if (item is DirectoryInfo dir)
-            return _excludedDirs.Contains(dir.Name);
-
-        if (item is FileInfo file)
-            return _excludedExtensions.Contains(file.Extension.ToLower()) || _excludedFiles.Contains(file.Name.ToLower());
-
-        return false;
     }
 
     /// <summary>
