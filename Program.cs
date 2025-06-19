@@ -93,9 +93,10 @@ class ProjectToMdBuilder
 
             var rootName = new DirectoryInfo(projectPath).Name; // Use actual processed path for root name
             string outputPath;
+            string? gitName = null; 
             if (isGit)
             { 
-                var gitName = originalUserInputPath.Split('/').Last().Replace(".git", "");
+                gitName = originalUserInputPath.Split('/').Last().Replace(".git", "");
                 outputPath = Path.Combine(Directory.GetCurrentDirectory(), "Outputs", gitName + "_listing.md");
                 Directory.CreateDirectory(Path.GetDirectoryName(outputPath)); // Ensure Outputs directory exists
             }
@@ -105,7 +106,7 @@ class ProjectToMdBuilder
                 outputPath = Path.Combine(projectPath, rootName + "_listing.md");
             }
             Console.WriteLine("\nНачинаем обработку...");
-            Build(projectPath, outputPath);
+            Build(projectPath, outputPath, gitName);
 
             // If Build was successful, update history with the original path
             string historyFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, HistoryFile);
@@ -131,8 +132,10 @@ class ProjectToMdBuilder
                 }
                 catch (IOException ioEx)
                 {
-
+                    Console.WriteLine($"Ошибка при удалении временной папки '{_tempClonedRepoPath}': {ioEx.Message}. Пробую еще раз.");
+                    Directory.Delete(_tempClonedRepoPath, true);
                     Console.WriteLine($"Ошибка при удалении временной папки '{_tempClonedRepoPath}': {ioEx.Message}. Возможно, потребуется удалить ее вручную.");
+
                 }
                 catch (UnauthorizedAccessException authEx)
                 {
@@ -212,19 +215,6 @@ class ProjectToMdBuilder
     }
 
     /// <summary>
-    /// Prompts the user to enter a full path to a local project folder or a GitHub repository URL.
-    /// </summary>
-    /// <returns>The raw string input by the user.</returns>
-    private string GetCustomPath()
-    {
-        Console.Write("Введите полный путь к локальной папке проекта или URL GitHub репозитория: ");
-        var path = Console.ReadLine().Trim();
-
-        // Validation will be handled in ChooseProjectPath after determining if it's a URL or local path
-        return path;
-    }
-
-    /// <summary>
     /// Checks if the given path string looks like a GitHub repository URL.
     /// </summary>
     /// <param name="path">The path string to check.</param>
@@ -281,6 +271,82 @@ class ProjectToMdBuilder
         return path; // Return the raw user input
     }
 
+
+
+    private string GetCustomPath()
+    {
+        var appDir = AppDomain.CurrentDomain.BaseDirectory;
+        var historyFile = Path.Combine(appDir, HistoryFile);
+
+        var history = new List<string>();
+        if (File.Exists(historyFile))
+        {
+            history = File.ReadAllLines(historyFile)
+                .Distinct()
+                .ToList();
+        }
+
+        var options = new List<string> { $"Текущая папка: {appDir}", "Ввести путь вручную" };
+        options.AddRange(history);
+
+        var selected = ShowMenu(options);
+
+        string path = selected switch
+        {
+            var s when s.StartsWith("Текущая папка") => appDir,
+            "Ввести путь вручную" => GetCustomPath(),
+            _ => selected
+        };
+
+        if (!history.Contains(path))
+        {
+            history.Insert(0, path);
+            File.WriteAllLines(historyFile, history);
+        }
+
+        return path;
+    }
+
+    private string ShowMenu(List<string> options)
+    {
+        int index = 0;
+        ConsoleKeyInfo key;
+        Console.CursorVisible = false;
+
+        do
+        {
+            Console.Clear();
+            Console.WriteLine("=== Генератор документации проекта ===\n");
+            Console.WriteLine("Выберите папку проекта (стрелки, Enter):\n");
+
+            for (int i = 0; i < options.Count; i++)
+            {
+                if (i == index)
+                {
+                    Console.BackgroundColor = ConsoleColor.Gray;
+                    Console.ForegroundColor = ConsoleColor.Black;
+                    Console.WriteLine($"> {options[i]}");
+                    Console.ResetColor();
+                }
+                else
+                {
+                    Console.WriteLine($"  {options[i]}");
+                }
+            }
+
+            key = Console.ReadKey(true);
+
+            if (key.Key == ConsoleKey.UpArrow)
+                index = (index - 1 + options.Count) % options.Count;
+            else if (key.Key == ConsoleKey.DownArrow)
+                index = (index + 1) % options.Count;
+
+        } while (key.Key != ConsoleKey.Enter);
+
+        Console.CursorVisible = true;
+        Console.Clear();
+        return options[index];
+    }
     /// <summary>
     /// Updates the history file with the successfully processed path.
     /// The path is added to the top, and the history is limited to 10 entries.
@@ -329,7 +395,7 @@ class ProjectToMdBuilder
     /// </summary>
     /// <param name="rootPath">The root path of the project to document (can be a local path or a path to a cloned repository).</param>
     /// <param name="outputMd">The path where the generated Markdown file will be saved.</param>
-    private void Build(string rootPath, string outputMd)
+    private void Build(string rootPath, string outputMd, string? gitName)
     {
         // Before building, ensure the path is a valid local directory.
         // The checks for IsGitHubUrl and Directory.Exists(rootPath) are now effectively handled
@@ -337,7 +403,6 @@ class ProjectToMdBuilder
         // If projectPath in Run method is a URL, it's cloned. If it's a local path, it's used directly.
         // Build() is now called with a path that is confirmed to be a local directory.
 
-        // However, it's good practice to ensure rootPath is valid here too, though it should be by design now.
         if (!Directory.Exists(rootPath))
         {
             Console.WriteLine($"Критическая Ошибка: Директория для сборки {rootPath} не существует. Это не должно было произойти.");
@@ -350,7 +415,8 @@ class ProjectToMdBuilder
 
         Console.WriteLine("\nГенерация структуры проекта...");
         mdContent.AppendLine("#======Структура проекта:=====\n ");
-        GenerateStructure(new DirectoryInfo(rootPath), "", mdContent, ref dirCounter, ref fileCounter);
+        GenerateStructure(new DirectoryInfo(rootPath), "", mdContent, gitName, ref dirCounter, ref fileCounter);
+
         mdContent.AppendLine("==============================");
         Console.WriteLine($"Обработано папок: {dirCounter}, файлов: {fileCounter}");
 
@@ -397,10 +463,11 @@ class ProjectToMdBuilder
     /// <param name="sb">The StringBuilder to append the structure to.</param>
     /// <param name="dirCounter">Reference to a counter for processed directories.</param>
     /// <param name="fileCounter">Reference to a counter for processed files (for structure view).</param>
-    private void GenerateStructure(DirectoryInfo dir, string indent, StringBuilder sb, ref int dirCounter, ref int fileCounter)
+    private void GenerateStructure(DirectoryInfo dir, string indent, StringBuilder sb, string? projName, ref int dirCounter, ref int fileCounter)
     {
         dirCounter++;
-        if (dirCounter == 1) sb.AppendLine($"[ROOT] {dir.Name}");
+        var rootName = projName ?? dir.Name; // Use provided project name or directory name
+        if (dirCounter == 1) sb.AppendLine($"[ROOT] {rootName}");
         var files = dir.GetFiles().Where(f => !ShouldExclude(f)).ToList();
         var subDirs = dir.GetDirectories().Where(d => !ShouldExclude(d)).ToList();
 
@@ -424,7 +491,7 @@ class ProjectToMdBuilder
                 //sb.AppendLine($"<div class='folder'>{indent}📁 {dir.Name}</div>");
                 // Рекурсивный вызов с правильным отступом
                 var newIndent = indent + (isLast ? "        " : "│        ");
-                GenerateStructure(subDir, newIndent, sb, ref dirCounter, ref fileCounter);
+                GenerateStructure(subDir, newIndent, sb, projName, ref dirCounter, ref fileCounter);
             }
         }
     }
