@@ -1,80 +1,80 @@
 # ProjectToMdBuilder 🚀
 
-**ProjectToMdBuilder** — это мощный и удобный инструмент на C#, предназначенный для автоматической генерации полной документации вашего проекта в формате Markdown. Он идеально подходит для подготовки кода к анализу нейросетями (LLM), создания быстрых обзоров архитектуры или резервного копирования исходного кода в одном файле.
+**ProjectToMdBuilder** is a powerful and convenient C# tool designed to automatically generate complete documentation of your project in Markdown format. It is ideal for preparing code for analysis by Large Language Models (LLMs), creating quick architecture overviews, or backing up source code into a single file.
 
 ---
 
-## ✨ Ключевые особенности
+## ✨ Key Features
 
-*   **🌐 Поддержка GitHub:** Просто вставьте ссылку на публичный репозиторий, и инструмент сам клонирует его во временную папку для обработки.
-*   **📂 Визуализация структуры:** Автоматическое построение красивого дерева директорий и файлов проекта.
-*   **📝 Сбор содержимого:** Объединение исходного кода всех файлов в один MD-файл с сохранением относительных путей.
-*   **🎨 Подсветка синтаксиса:** Автоматическое определение языка (C#, JS, JSON, HTML, CSS, SQL, XML) для корректного отображения кода в Markdown.
-*   **🛡️ Умная фильтрация:** Предустановленные списки исключений для игнорирования служебных файлов, бинарных данных и библиотек.
-*   **⌨️ Интерактивное меню:** Удобный консольный интерфейс с навигацией стрелками и историей последних путей.
-
----
-
-## 🛠 Технологический стек
-
-*   **Язык:** C#
-*   **Платформа:** .NET 9.0
-*   **Зависимости:** `System.Text.Encoding.CodePages`
+*   **🌐 GitHub Support:** Simply paste a link to a public repository, and the tool will automatically clone it to a temporary folder for processing.
+*   **📂 Structure Visualization:** Automatically builds a beautiful directory and file tree of the project.
+*   **📝 Content Gathering:** Combines the source code of all files into a single MD file while preserving relative paths.
+*   **🎨 Syntax Highlighting:** Automatically detects the language (C#, JS, JSON, HTML, CSS, SQL, XML) for correct code display in Markdown.
+*   **🛡️ Smart Filtering:** Pre-defined exclusion lists to ignore service files, binary data, and libraries.
+*   **⌨️ Interactive Menu:** User-friendly console interface with arrow key navigation and a history of recent paths.
 
 ---
 
-## 🚀 Быстрый старт
+## 🛠 Tech Stack
 
-### Требования
-*   Установленный [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
-*   Установленный [Git](https://git-scm.com/) (для работы с GitHub репозиториями)
+*   **Language:** C#
+*   **Platform:** .NET 9.0
+*   **Dependencies:** `System.Text.Encoding.CodePages`
 
-### Запуск
-1.  Клонируйте репозиторий с инструментом или скачайте исходный код.
-2.  Перейдите в папку проекта и выполните команду:
+---
+
+## 🚀 Quick Start
+
+### Requirements
+*   [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) installed
+*   [Git](https://git-scm.com/) installed (for working with GitHub repositories)
+
+### Running
+1.  Clone the repository with the tool or download the source code.
+2.  Navigate to the project folder and execute the command:
     ```bash
     dotnet run
     ```
-3.  Используйте стрелки на клавиатуре для выбора опции:
-    *   **Текущая папка:** Обработать файлы в директории запуска.
-    *   **Ввести путь вручную:** Укажите локальный путь или URL GitHub репозитория.
-    *   **История:** Выберите один из 10 последних путей.
+3.  Use the arrow keys on your keyboard to select an option:
+    *   **Current Folder:** Process files in the launch directory.
+    *   **Enter path manually:** Specify a local path or a GitHub repository URL.
+    *   **History:** Choose from the 10 most recent paths.
 
 ---
 
-## 🔍 Правила фильтрации (Исключения)
+## 🔍 Filtering Rules (Exclusions)
 
-Инструмент автоматически игнорирует шум, чтобы ваш файл документации оставался чистым и полезным.
+The tool automatically ignores "noise" to keep your documentation file clean and useful.
 
-### Игнорируемые папки
+### Ignored Folders
 `.git`, `.github`, `bin`, `obj`, `node_modules`, `packages`, `dist`, `wwwroot`, `.vs`, `.cr`, `.vscode`, `.idea`, `TestResults`, `coverage`, `artifacts`, `docs`, `images`, `resources`.
 
-### Игнорируемые расширения
-*   **Бинарные файлы:** `.exe`, `.dll`, `.pdb`, `.zip`, `.rar`, `.7z`, `.tar`, `.gz`, `.iso`, `.class`, `.jar`
-*   **Медиа:** `.png`, `.jpg`, `.jpeg`, `.gif`, `.bmp`, `.ico`, `.mp3`, `.mp4`, `.avi`, `.mov`, `.wmv`, `.flv`
-*   **Служебные:** `.suo`, `.user`, `.cache`, `.pdf`, `.snk`, `.pfx`, `.cer`, `.sln`, `.userprefs`, `.lock.json`, `.tmp`, `.bak`, `.swp`, `.log`
-*   **Прочие:** `.md`, `.txt`, `.sql`, `.dockerignore`, `.gitattributes`, `.gitignore`
+### Ignored Extensions
+*   **Binary files:** `.exe`, `.dll`, `.pdb`, `.zip`, `.rar`, `.7z`, `.tar`, `.gz`, `.iso`, `.class`, `.jar`
+*   **Media:** `.png`, `.jpg`, `.jpeg`, `.gif`, `.bmp`, `.ico`, `.mp3`, `.mp4`, `.avi`, `.mov`, `.wmv`, `.flv`
+*   **Service:** `.suo`, `.user`, `.cache`, `.pdf`, `.snk`, `.pfx`, `.cer`, `.sln`, `.userprefs`, `.lock.json`, `.tmp`, `.bak`, `.swp`, `.log`
+*   **Other:** `.md`, `.txt`, `.sql`, `.dockerignore`, `.gitattributes`, `.gitignore`
 
-### Игнорируемые файлы
+### Ignored Files
 `launchsettings.json`, `appsettings.json`, `appsettings.development.json`, `appsettings.production.json`, `appsettings.staging.json`, `web.config`.
 
 ---
 
-## 📄 Пример вывода
+## 📄 Output Example
 
-Результат работы сохраняется в файл `{ИмяПроекта}_listing.md` в корневой папке проекта (для локальных путей) или в папку `Outputs` (для GitHub).
+The result is saved to a `{ProjectName}_listing.md` file in the project's root folder (for local paths) or in the `Outputs` folder (for GitHub clones).
 
-Структура документа:
-1.  **#======Структура проекта:=====** (Визуальное дерево)
-2.  **# Содержимое файлов**
-    *   `## Файл: Path/To/File.cs`
-    *   Блок кода с соответствующим языком.
-
----
-
-## 🤝 Вклад в проект
-
-Если у вас есть идеи по улучшению или вы нашли ошибку — создавайте Issue или присылайте Pull Request. Буду рад любой помощи!
+Document Structure:
+1.  **#======Project Structure:=====** (Visual tree)
+2.  **# File Contents**
+    *   `## File: Path/To/File.cs`
+    *   Code block with appropriate language highlighting.
 
 ---
-*Сгенерировано с любовью к чистому коду и качественной документации.*
+
+## 🤝 Contributing
+
+If you have ideas for improvement or found a bug, please create an Issue or send a Pull Request. I would be happy for any help!
+
+---
+*Generated with love for clean code and high-quality documentation.*
